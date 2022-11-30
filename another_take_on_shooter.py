@@ -1,15 +1,18 @@
 import pygame, random, math
 from pygame.locals import *
 
+#Use 2D vectors
+vector = pygame.math.Vector2
+
 #Initialize pygame
 pygame.init()
+
+FPS = 60
+clock = pygame.time.Clock()
 
 #Set display surface
 WINDOW_WIDTH = 945
 WINDOW_HEIGHT = 600
-
-
-
 
 OBJECT_WIDTH = 80
 OBJECT_HEIGHT = 80
@@ -32,22 +35,36 @@ black = 0,0,0
 PLANET_HIT = pygame.USEREVENT + 3
 
 
-FPS = 60
-clock = pygame.time.Clock()
+
 
 class Player1(pygame.sprite.Sprite):
-    def __init__(self,x, y, velocity):
+    def __init__(self,x, y, velocity, bullet_group):
         super().__init__()
-        self.bullet = []
         self.image = pygame.transform.scale(pygame.image.load("spaceship_red.png"), (50, 50))
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
         self.velocity = velocity
         self.angle = angle
+
+        self.bullet_group = bullet_group
+        
     
+        #Kinematics vectors (first value is the x, second value is the y)
+        self.position = vector(x, y)
+        self.velocity = vector(0, 0)        #0 aby ze začátku nikam nezrychloval
+        self.acceleration = vector(0, 0)
+
+        #Kinematic constants
+        self.HORIZONTAL_ACCELERATION = 2       #toto je zrychlení při rozjezdu
+        self.HORIZONTAL_FRICTION = 0.15     #takto rychle brzdí rozjetej
+        
+
     def update(self):
-         self.move()
-         self.rotate()
+        self.move()
+        self.rotate()
+        self.collisions()
+       
+         
 
 
 
@@ -59,18 +76,37 @@ class Player1(pygame.sprite.Sprite):
     # from https://web.archive.org/web/20121126060528/http://eli.thegreenplace.net/2008/12/13/writing-a-game-in-python-with-pygame-part-i/
 
 
-    def move(self):       
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT] and self.rect.x >= 0:
-            self.rect.x -= self.velocity
-            Player1.rad_to_offset(90,90)
-        if keys[pygame.K_RIGHT] and self.rect.x <= WINDOW_WIDTH-50:
-            self.rect.x += self.velocity
-        if keys[pygame.K_UP] and self.rect.y >= 0:
-            self.rect.y -= self.velocity
-        if keys[pygame.K_DOWN] and self.rect.y <= WINDOW_HEIGHT-50:
-            self.rect.y += self.velocity
+    def move(self):  
+
+        #Set the accleration vector to (0, 0) so there is initially no acceleration
+        #If there is no force (no key presses) acting on the player then accerlation should be 0
+        #Vertical accelration (gravity) is present always regardless of key-presses
+        self.acceleration = vector(0, 0)     
         
+        #If the user is presseing a key, set the x-component of the accleration vector to a non zero value.
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT] and self.rect.x >= 50:
+            self.acceleration.x = -1*self.HORIZONTAL_ACCELERATION
+            self.image = pygame.transform.rotate(self.image, 90)
+        if keys[pygame.K_RIGHT] and self.rect.x <= WINDOW_WIDTH-50:
+            self.acceleration.x = self.HORIZONTAL_ACCELERATION
+        if keys[pygame.K_UP] and self.rect.y >= 50:
+            self.acceleration.y = -1*self.HORIZONTAL_ACCELERATION
+        if keys[pygame.K_DOWN] and self.rect.y <= WINDOW_HEIGHT-50:
+            self.acceleration.y = self.HORIZONTAL_ACCELERATION
+
+
+         #Calculate new kinematics values (2, 5) + (1, 6) = (3, 11)
+        self.acceleration.x -= self.velocity.x*self.HORIZONTAL_FRICTION
+        self.acceleration.y -= self.velocity.y*self.HORIZONTAL_FRICTION
+
+        self.velocity += self.acceleration
+        self.position += self.velocity + 0.5*self.acceleration
+
+        
+         #Update new rect based on kinematic calculations
+        self.rect.center = self.position
+
     
     def rotate(self):
         keys = pygame.key.get_pressed()
@@ -89,9 +125,47 @@ class Player1(pygame.sprite.Sprite):
                     
         
     def shooting(self):
-        Bullet.handle_bullets()
+        
+            #self.shoot_sound.play()      #zatím bez omezení počtu střel
+            PlayerBullet(self.rect.centerx, self.rect.bottom, self.bullet_group)
 
-  
+        
+                  
+    def collisions(self):
+        pass
+        """ collide_planet = pygame.sprite.spritecollide(self, planet_group, False)
+        if collide_planet:
+            self.position.y = collide_planet[0].rect.top + 1
+            self.velocity.y = 0 """
+
+    """       #Check for collisions with the water tiles
+        if pygame.sprite.spritecollide(self, planet_group, False):
+            self.velocity.x = 0
+            self.velocity.y = 0
+             """
+
+class PlayerBullet(pygame.sprite.Sprite):
+    """A class to model a bullet fired by the player"""
+
+    def __init__(self, x, y, bullet_group):
+        """Initialize the bullet"""
+        super().__init__()
+        self.image = pygame.image.load("green_laser.png")
+        self.rect = self.image.get_rect()
+        self.rect.centerx = x
+        self.rect.centery = y
+
+        self.velocity = 10
+        bullet_group.add(self)
+
+    def update(self):
+        """Update the bullet"""
+        self.rect.y += self.velocity
+
+        #If the bullet is off the screen, kill it
+        if self.rect.bottom >= WINDOW_HEIGHT:
+            self.kill() 
+
 class Explosion(pygame.sprite.Sprite):
 	def __init__(self, x, y):
 		pygame.sprite.Sprite.__init__(self)
@@ -133,24 +207,11 @@ class Planet(pygame.sprite.Sprite):
         pass
 
 
-class Bullet():
-    def __init__(self):
-        self.bullet = []
-
-    def handle_bullets(self):
-        for bullet in self.bullet:
-            bullet.x += velocity
-            if planet_group.colliderect(bullet):
-                pygame.event.post(pygame.event.Event(PLANET_HIT))
-                self.bullet.remove(bullet)		#po nárazu do planety smaže střelu
-                
-            elif bullet.x > WINDOW_WIDTH or bullet.y > WINDOW_HEIGHT:
-                self.bullet.remove(bullet)
-
+my_player_bullet_group = pygame.sprite.Group()
 
    
 player_group = pygame.sprite.Group() 
-red_player = Player1(WINDOW_WIDTH//2, WINDOW_HEIGHT//2 , velocity)
+red_player = Player1(WINDOW_WIDTH//2, WINDOW_HEIGHT//2 , velocity, my_player_bullet_group)
 player_group.add(red_player)
 
 
@@ -166,21 +227,22 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-        elif event.type == pygame.KEYDOWN:
+        keys = pygame.key.get_pressed()
+        if keys[K_q]:
+            angle +=6
 
-            if event.key == pygame.K_LCTRL:
-                Bullet.handle_bullets()
-       
-            keys = pygame.key.get_pressed()
-            if keys[K_q]:
-                angle +=6
+        if keys[K_e]:
+            angle -= 6
 
-            if keys[K_e]:
-                angle -= 6
-
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                red_player.shooting()
     
 
     display_surface.blit(BACKGROUND_IMAGE, BACKGROUND_IMAGE_RECT)
+
+    my_player_bullet_group.update()
+    my_player_bullet_group.draw(display_surface)
 
     player_group.update()
     player_group.draw(display_surface)
