@@ -1,5 +1,4 @@
 import pygame, random, math
-from pygame.locals import *
 
 #Use 2D vectors
 vector = pygame.math.Vector2
@@ -11,8 +10,8 @@ FPS = 60
 clock = pygame.time.Clock()
 
 #Set display surface
-WINDOW_WIDTH = 945
-WINDOW_HEIGHT = 600
+WINDOW_WIDTH = 1200
+WINDOW_HEIGHT = 800
 
 OBJECT_WIDTH = 80
 OBJECT_HEIGHT = 80
@@ -169,11 +168,11 @@ class Player1(pygame.sprite.Sprite):
             self.position.y = collide_planet[0].rect.top + 1
             self.velocity.y = 0 """
 
-    """       #Check for collisions with the water tiles
+           #Check for collisions with the water tiles
         if pygame.sprite.spritecollide(self, planet_group, False):
             self.velocity.x = 0
             self.velocity.y = 0
-             """
+             
 
 class PlayerBullet(pygame.sprite.Sprite):
     """A class to model a bullet fired by the player"""
@@ -213,14 +212,17 @@ class PlayerBullet(pygame.sprite.Sprite):
             self.kill()
         if self.rect.centerx >= WINDOW_WIDTH:
             self.kill()
-        
+    
+   
+             
+
 
 class Explosion(pygame.sprite.Sprite):
 	def __init__(self, x, y):
 		pygame.sprite.Sprite.__init__(self)
 		self.images = []
 		for num in range(1, 6):
-			img = pygame.image.load(f"Assets/exp{num}.png")
+			img = pygame.image.load(f"exp/exp{num}.png")
 			img = pygame.transform.scale(img, (100, 100))
 			self.images.append(img)
 		self.index = 0
@@ -246,15 +248,20 @@ class Explosion(pygame.sprite.Sprite):
 
 
 class Planet(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, rnd_width_from, rnd_width_to, rnd_height_from, rnd_height_to):
         super().__init__()
         self.image = pygame.transform.scale(pygame.image.load("planet.png"),(OBJECT_WIDTH, OBJECT_HEIGHT))
         self.rect = self.image.get_rect()
-        self.rect.center = (random.randint(0,WINDOW_WIDTH-OBJECT_WIDTH), random.randint(0,WINDOW_HEIGHT-OBJECT_HEIGHT))
-
+        self.rect.center = (random.randint(rnd_width_from,rnd_width_to-OBJECT_WIDTH), random.randint(rnd_height_from,rnd_height_to-OBJECT_HEIGHT))
+    
+         
     def update(self):
-        pass
+        if pygame.sprite.spritecollide(self, my_player_bullet_group, True):
+           explosion = Explosion(self.rect.centerx,self.rect.centery)
+           explosion_group.add(explosion)
 
+
+   
 
 my_player_bullet_group = pygame.sprite.Group()
 
@@ -265,9 +272,15 @@ player_group.add(red_player)
 
 
 planet_group = pygame.sprite.Group()
-planet1 = Planet()
-planet2 = Planet()
-planet_group.add(planet1, planet2)
+planet1 = Planet(0+OBJECT_WIDTH,WINDOW_WIDTH//2,0+OBJECT_HEIGHT,WINDOW_HEIGHT//2)
+planet2 = Planet(WINDOW_WIDTH//2+OBJECT_WIDTH,WINDOW_WIDTH-OBJECT_WIDTH,0+OBJECT_HEIGHT, WINDOW_HEIGHT//2)
+planet3 = Planet(0+OBJECT_WIDTH,WINDOW_WIDTH//2-OBJECT_HEIGHT,WINDOW_HEIGHT//2+OBJECT_HEIGHT, WINDOW_HEIGHT-OBJECT_HEIGHT)
+planet4 = Planet(WINDOW_WIDTH//2+OBJECT_WIDTH,WINDOW_WIDTH-OBJECT_WIDTH,WINDOW_HEIGHT//2+OBJECT_HEIGHT,WINDOW_HEIGHT-OBJECT_HEIGHT)
+planet_group.add(planet1, planet2, planet3, planet4)
+
+explosion_group = pygame.sprite.Group()
+
+
 
 running = True
 while running:
@@ -286,14 +299,20 @@ while running:
     
     display_surface.blit(BACKGROUND_IMAGE, BACKGROUND_IMAGE_RECT)
 
+    
+    
     my_player_bullet_group.update()
     my_player_bullet_group.draw(display_surface)
 
+   
     player_group.update()
     player_group.draw(display_surface)
 
     planet_group.update()
-    planet_group.draw(display_surface,)
+    planet_group.draw(display_surface)
+
+    explosion_group.draw(display_surface)
+    explosion_group.update()
 
     
     pygame.display.update()
