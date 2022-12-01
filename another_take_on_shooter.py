@@ -18,7 +18,7 @@ OBJECT_HEIGHT = 80
 display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 pygame.display.set_caption("fly and shoot")
 
-velocity = 10
+velocity = 5        #toto asi k ničemu není, je to v pplayerovi ve vektorech
 angle = 0
 
 BACKGROUND_IMAGE = pygame.transform.scale(pygame.image.load("space.png"),(WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -33,7 +33,7 @@ black = 0,0,0
 
 PLANET_HIT = pygame.USEREVENT + 3
 
-i = [0]
+i = [0]     #spojujee pohyb šipek se směrem střelby
 
 
 
@@ -74,7 +74,7 @@ class Player1(pygame.sprite.Sprite):
 
 
 
-    def rad_to_offset(radians, offset): # insert better func name.
+    def rad_to_offset(radians, offset): # insert better func name. Nevim co s tim ale třeba na otáčení by to mohlo být lepší
         pass
      #   x = cos(radians) * offset
       #  y = sin(radians) * offset
