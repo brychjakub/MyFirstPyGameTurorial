@@ -18,6 +18,9 @@ OBJECT_HEIGHT = 80
 display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 pygame.display.set_caption("fly and shoot")
 
+shoot_sound = pygame.mixer.Sound("GunSilencer.mp3")
+explosion_sound = pygame.mixer.Sound("Grenade.mp3")
+
 velocity = 5        #toto asi k ničemu není, je to v pplayerovi ve vektorech
 angle = 0
 
@@ -155,7 +158,7 @@ class Player1(pygame.sprite.Sprite):
         
     def shooting(self):
       
-            #self.shoot_sound.play()      #zatím bez omezení počtu střel
+            shoot_sound.play()      #zatím bez omezení počtu střel
             PlayerBullet(self.rect.centerx, self.rect.bottom, self.bullet_group)
     
      
@@ -249,7 +252,7 @@ class Player2(pygame.sprite.Sprite):
 
     def shooting(self):
       
-            #self.shoot_sound.play()      #zatím bez omezení počtu střel
+            shoot_sound.play()      #zatím bez omezení počtu střel
             Player2Bullet(self.rect.centerx, self.rect.bottom, self.bullet_group)
     
      
@@ -349,7 +352,6 @@ class Player2Bullet(pygame.sprite.Sprite):
              explosion = Explosion(self.rect.centerx,self.rect.centery)
              explosion_group.add(explosion)
 
-             
 
 class Explosion(pygame.sprite.Sprite):
 	def __init__(self, x, y):
@@ -364,6 +366,7 @@ class Explosion(pygame.sprite.Sprite):
 		self.rect = self.image.get_rect()
 		self.rect.center = [x, y]
 		self.counter = 0
+    
 
 	def update(self):
         
@@ -379,8 +382,13 @@ class Explosion(pygame.sprite.Sprite):
 		#if the animation is complete, reset animation index
 		if self.index >= len(self.images) - 1 and self.counter >= explosion_speed:
 			self.kill()
+        
+        #!!!!proč sem nejde nic napsat???!!! píše to indentation error ale nemůžu ho najít!!!
+             
 
-  
+
+
+
 
 class Planet(pygame.sprite.Sprite):
     def __init__(self, rnd_width_from, rnd_width_to, rnd_height_from, rnd_height_to):
@@ -394,8 +402,9 @@ class Planet(pygame.sprite.Sprite):
         if pygame.sprite.spritecollide(self, my_player_bullet_group, True):
            explosion = Explosion(self.rect.centerx,self.rect.centery)
            explosion_group.add(explosion)
+           explosion_sound.play()
 
-
+        
    
 
 my_player_bullet_group = pygame.sprite.Group()
