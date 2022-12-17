@@ -18,8 +18,18 @@ OBJECT_HEIGHT = 80
 display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 pygame.display.set_caption("fly and shoot")
 
+font = pygame.font.Font('AttackGraffiti.ttf', 32)
+
+
 shoot_sound = pygame.mixer.Sound("GunSilencer.mp3")
 explosion_sound = pygame.mixer.Sound("Grenade.mp3")
+
+background_music = pygame.mixer.Sound("veselaCut.mp3")
+#background_music.play(-1)
+
+play = 0 #určuje pozici mute button, sudé čísla včetně 0 znamá play, lichá stop
+
+
 
 velocity = 5        #toto asi k ničemu není, je to v pplayerovi ve vektorech
 angle = 0
@@ -39,13 +49,60 @@ PLANET_HIT = pygame.USEREVENT + 3
 i = [0,0]     #spojujee pohyb šipek se směrem střelby
 j = 0       #určuje barvu strely
 
+class Game():
+    def __init__(self, player1, player2):
+        self.player1 = player1
+        self.player2 = player2
 
-class Player1(pygame.sprite.Sprite):
+    def update(self):
+        self.draw()
+
+    def draw(self):
+        lives_text = font.render("Lives: " + str(self.player1.lives), True, green, white)
+        lives_rect = lives_text.get_rect()
+        lives_rect.topright = (WINDOW_WIDTH, 0)
+        display_surface.blit(lives_text, lives_rect)
+
+        lives_text2 = font.render("Lives: " + str(self.player2.lives), True, green, white)
+        lives_rect2 = lives_text2.get_rect()
+        lives_rect2.topleft = (0, 0)
+        display_surface.blit(lives_text2, lives_rect2)
+
+class Meteorites(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.transform.scale(pygame.image.load("meteorit.png"), (40, 40))
+        self.rect = self.image.get_rect()
+        self.rect.center = (0, random.randint(0, WINDOW_HEIGHT))
+
+        
+    def update(self):
+        self.movement()
+
+    def movement(self):
+        self.rect.x += 10
+        self.rect.y += 10
+            
+        if self.rect.x < 0:
+            self.rect.x = WINDOW_WIDTH
+        elif self.rect.x > WINDOW_WIDTH:
+            self.rect.x = 0
+        elif self.rect.y < 0:
+            self.rect.y = WINDOW_HEIGHT
+        
+        elif self.rect.y > WINDOW_HEIGHT:
+            self.rect.y = 0
+
+    
+
+class Player1(pygame.sprite.Sprite,):
     def __init__(self, velocity, bullet_group):
         super().__init__()
         self.image = pygame.image.load("player1/spaceship_left.png")
+        self.lives = 5
         self.rect = self.image.get_rect()
         self.rect.centerx = random.randint(0,WINDOW_WIDTH//2)
+
         x = self.rect.centerx
         self.rect.bottom = WINDOW_HEIGHT//2
         y = self.rect.bottom
@@ -72,18 +129,15 @@ class Player1(pygame.sprite.Sprite):
         self.rotate()
         self.collisions()
      
-       
-         
-
-
 
     def rad_to_offset(radians, offset): # insert better func name. Nevim co s tim ale třeba na otáčení by to mohlo být lepší
         pass
-     #   x = cos(radians) * offset
+          #   x = cos(radians) * offset
       #  y = sin(radians) * offset
        # return [x, y]
     # from https://web.archive.org/web/20121126060528/http://eli.thegreenplace.net/2008/12/13/writing-a-game-in-python-with-pygame-part-i/
 
+   
 
     def move(self):  
         #Set the accleration vector to (0, 0) so there is initially no acceleration
@@ -160,28 +214,32 @@ class Player1(pygame.sprite.Sprite):
       
             shoot_sound.play()      #zatím bez omezení počtu střel
             PlayerBullet(self.rect.centerx, self.rect.bottom, self.bullet_group)
-    
-     
-        
-                  
+                      
     def collisions(self):
-        pass
-        """ collide_planet = pygame.sprite.spritecollide(self, planet_group, False)
-        if collide_planet:
-            self.position.y = collide_planet[0].rect.top + 1
-            self.velocity.y = 0 """
+        if pygame.sprite.spritecollide(self, meteorites_group, True):
+            self.lives -= 1
+            print(self.lives)
+            explosion = Explosion(self.rect.centerx,self.rect.centery)
+            explosion_group.add(explosion)
+            explosion_sound.play() 
+            a = Meteorites()
+            meteorites_group.add(a)
 
-           #Check for collisions with the water tiles
+              
         if pygame.sprite.spritecollide(self, planet_group, False):
             self.velocity.x = 0
             self.velocity.y = 0
+            self.lives -= .1
              
 class Player2(pygame.sprite.Sprite):
     def __init__(self, velocity, bullet_group):
         super().__init__()
+        self.lives = 5
         self.image = pygame.image.load("player2/spaceship_left.png")
+
         self.rect = self.image.get_rect()
         self.rect.centerx = random.randint(WINDOW_WIDTH//2, WINDOW_WIDTH-OBJECT_WIDTH)
+
         x = self.rect.centerx
         self.rect.bottom = WINDOW_HEIGHT//2
         y = self.rect.bottom
@@ -257,20 +315,20 @@ class Player2(pygame.sprite.Sprite):
     
      
     def collisions(self):
-        pass
-        """ collide_planet = pygame.sprite.spritecollide(self, planet_group, False)
-        if collide_planet:
-            self.position.y = collide_planet[0].rect.top + 1
-            self.velocity.y = 0 """
-      
-           #Check for collisions with the water tiles
+        if pygame.sprite.spritecollide(self, meteorites_group, True):
+            self.lives -= 1
+            explosion = Explosion(self.rect.centerx,self.rect.centery)
+            explosion_group.add(explosion)
+            explosion_sound.play() 
+            a = Meteorites()
+            meteorites_group.add(a)
+           
         if pygame.sprite.spritecollide(self, planet_group, False):
             self.velocity.x = 0
             self.velocity.y = 0
 
         if pygame.sprite.spritecollide(self, my_player_bullet_group, True):
                 pass
-
 
 class PlayerBullet(pygame.sprite.Sprite):
     def __init__(self, x, y, bullet_group):
@@ -310,6 +368,8 @@ class PlayerBullet(pygame.sprite.Sprite):
         if pygame.sprite.spritecollide(self, player_group, True):
              explosion = Explosion(self.rect.centerx,self.rect.centery)
              explosion_group.add(explosion)   
+            
+             
 
 class Player2Bullet(pygame.sprite.Sprite):
     """A class to model a bullet fired by the player"""
@@ -352,7 +412,6 @@ class Player2Bullet(pygame.sprite.Sprite):
              explosion = Explosion(self.rect.centerx,self.rect.centery)
              explosion_group.add(explosion)
 
-
 class Explosion(pygame.sprite.Sprite):
 	def __init__(self, x, y):
 		pygame.sprite.Sprite.__init__(self)
@@ -370,7 +429,7 @@ class Explosion(pygame.sprite.Sprite):
 
 	def update(self):
         
-		explosion_speed = 4
+		explosion_speed = 3
 		#update explosion animation
 		self.counter += 1
 
@@ -385,11 +444,6 @@ class Explosion(pygame.sprite.Sprite):
         
         #!!!!proč sem nejde nic napsat???!!! píše to indentation error ale nemůžu ho najít!!!
              
-
-
-
-
-
 class Planet(pygame.sprite.Sprite):
     def __init__(self, rnd_width_from, rnd_width_to, rnd_height_from, rnd_height_to):
         super().__init__()
@@ -405,15 +459,20 @@ class Planet(pygame.sprite.Sprite):
            explosion_sound.play()
 
         
-   
 
 my_player_bullet_group = pygame.sprite.Group()
 
+meteorites_group = pygame.sprite.Group()
+meteorit1 = Meteorites()
+meteorites_group.add(meteorit1)
    
 player_group = pygame.sprite.Group() 
 player1 = Player1(velocity, my_player_bullet_group)
 player2 = Player2(velocity, my_player_bullet_group)
-player_group.add(player1, player2)
+player_group.add(player1, player2)  #pozor!!! vrátit player 2
+
+my_game = Game(player1, player2)
+
 
 
 planet_group = pygame.sprite.Group()
@@ -429,6 +488,7 @@ explosion_group = pygame.sprite.Group()
 
 running = True
 while running:
+
     #Check to see if the user wants to quit
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -443,26 +503,42 @@ while running:
             if event.key == pygame.K_LCTRL:
                     j = 2
                     player2.shooting()
+
+            if event.key == pygame.K_m:
+                play += 1
+                if play % 2 != 0:
+                    background_music.stop()
+                else:
+                    background_music.play()
+            
+           
+
     
 
     
     display_surface.blit(BACKGROUND_IMAGE, BACKGROUND_IMAGE_RECT)
 
-    
+    my_game.update()
+
     
     my_player_bullet_group.update()
     my_player_bullet_group.draw(display_surface)
 
-   
-    player_group.update()
     player_group.draw(display_surface)
+    player_group.update()
 
-    planet_group.update()
+    meteorites_group.draw(display_surface)
+    meteorites_group.update()
+    
+
+
     planet_group.draw(display_surface)
+    planet_group.update()
 
     explosion_group.draw(display_surface)
     explosion_group.update()
 
+   
     
     pygame.display.update()
     clock.tick(FPS)
