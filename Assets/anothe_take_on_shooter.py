@@ -51,12 +51,43 @@ i = [0,0]     #spojujee pohyb šipek se směrem střelby
 j = 0       #určuje barvu strely
 
 class Game():
-    def __init__(self, player1, player2):
+    def __init__(self, player1, player2, meteorit1, my_player_bullet_group):
         self.player1 = player1
         self.player2 = player2
+        self.meteorit1 = meteorit1
+        self.my_player_bullet_group = my_player_bullet_group
 
     def update(self):
         self.draw()
+        self.endGame()
+
+
+    def endGame(self):
+        if player1.lives == 0:
+            explosion = Explosion(player1.rect.centerx, player1.rect.centery)
+            explosion_group.add(explosion)
+            explosion_sound.play() 
+            player1.kill()
+            explosion.kill()
+            display_surface.blit(font.render("the winner is player 2", True, green, black),(100,100))
+            display_surface.blit(font.render("wanna player 2 back? hit ENTER!", True, green, black),(100,200))
+         
+
+        if player2.lives <=0:
+            explosion = Explosion(player2.rect.centerx, player2.rect.centery)
+            explosion_group.add(explosion)
+            explosion_sound.play() 
+            player2.kill()
+            explosion.kill()
+            display_surface.blit(font.render("the winner is player 1", True, green, black),(100,100))
+            display_surface.blit(font.render("wanna player 1 back? hit ENTER!", True, green, black),(100,200))
+           
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RETURN:
+                self.reset_game()
+                player1.kill()
+                player2.kill()
+                player_group.add(player1, player2)
 
     def draw(self):
         lives_text = font.render("Lives: " + str(self.player1.lives), True, green, white)
@@ -70,9 +101,7 @@ class Game():
         display_surface.blit(lives_text2, lives_rect2)
 
     def pause_game(self, main_text, main_text2, sub_text, mute_text):
-        """Pause the game"""
         global running
-
         #Set color
         WHITE = (255, 255, 255)
         BLACK = (0, 0, 0)
@@ -94,7 +123,6 @@ class Game():
         mute_text = font2.render(mute_text, True, WHITE)
         mute_rect = mute_text.get_rect()
         mute_rect.center = (WINDOW_WIDTH//2, WINDOW_HEIGHT//2)
-
 
         #Display the pause text
         display_surface.fill(BLACK)
@@ -118,14 +146,10 @@ class Game():
 
     def reset_game(self):
         """Reset the game"""
-        self.score = 0
-        self.round_number = 0
+        self.player1.lives = 5
+        self.player2.lives = 5
+                
 
-        self.player.lives = 5
-        self.player.warps = 2
-        self.player.reset()
-
-        self.start_new_round()
 
 class Meteorites(pygame.sprite.Sprite):
     def __init__(self):
@@ -169,10 +193,7 @@ class Player1(pygame.sprite.Sprite,):
         self.velocity = velocity
         self.angle = angle
         self.bullet_group = bullet_group
-        
-        
-        
-        
+                
         #Kinematics vectors (first value is the x, second value is the y)
         self.position = vector(x, y)
         self.velocity = vector(0, 0)        #0 aby ze začátku nikam nezrychloval
@@ -181,7 +202,7 @@ class Player1(pygame.sprite.Sprite,):
         #Kinematic constants
         self.HORIZONTAL_ACCELERATION = 2       #toto je zrychlení při rozjezdu
         self.HORIZONTAL_FRICTION = 0.15     #takto rychle brzdí rozjetej
-        
+
 
     def update(self):
         self.move()
@@ -196,8 +217,6 @@ class Player1(pygame.sprite.Sprite,):
        # return [x, y]
     # from https://web.archive.org/web/20121126060528/http://eli.thegreenplace.net/2008/12/13/writing-a-game-in-python-with-pygame-part-i/
 
-   
-
     def move(self):  
         #Set the accleration vector to (0, 0) so there is initially no acceleration
         #If there is no force (no key presses) acting on the player then accerlation should be 0
@@ -211,8 +230,7 @@ class Player1(pygame.sprite.Sprite,):
             self.acceleration.x = -1*self.HORIZONTAL_ACCELERATION
             self.image = pygame.image.load("player1/spaceship_left.png")
             i[0] = 0
-           
-          
+                
         if keys[pygame.K_RIGHT]:
             self.acceleration.x = self.HORIZONTAL_ACCELERATION
             self.image = pygame.image.load("player1/spaceship_right.png")
@@ -228,9 +246,7 @@ class Player1(pygame.sprite.Sprite,):
             self.image = pygame.image.load("player1/spaceship.png")
             i[0] = 3
            
-                  
-
-        
+                     
          #Calculate new kinematics values (2, 5) + (1, 6) = (3, 11)
         self.acceleration.x -= self.velocity.x*self.HORIZONTAL_FRICTION
         self.acceleration.y -= self.velocity.y*self.HORIZONTAL_FRICTION
@@ -246,8 +262,7 @@ class Player1(pygame.sprite.Sprite,):
         elif self.position.x > WINDOW_WIDTH:
             self.position.x = 0
         elif self.position.y < 0:
-            self.position.y = WINDOW_HEIGHT
-        
+            self.position.y = WINDOW_HEIGHT      
         elif self.position.y > WINDOW_HEIGHT:
             self.position.y = 0
 
@@ -269,11 +284,11 @@ class Player1(pygame.sprite.Sprite,):
                 display_surface.blit(img_copy, (mx - int(img_copy.get_width() / 2), my - int(img_copy.get_height() / 2)))
  """
         
-    def shooting(self):
-      
+    def shooting(self):  
             shoot_sound.play()      #zatím bez omezení počtu střel
-            PlayerBullet(self.rect.centerx, self.rect.centery, self.bullet_group)
+            PlayerBullet(self.rect.centerx, self.rect.centery, self.bullet_group, player2)
                       
+
     def collisions(self):
         if pygame.sprite.spritecollide(self, meteorites_group, True):
             self.lives -= 1
@@ -288,8 +303,10 @@ class Player1(pygame.sprite.Sprite,):
         if pygame.sprite.spritecollide(self, planet_group, False):
             self.velocity.x = 0
             self.velocity.y = 0
-            self.lives += .01        #idea - nabití života po desetinách, max asi jen o 1
-             
+            if self.lives <= 5:
+                self.lives += .01        #idea - nabití života po desetinách, max asi jen o 1
+
+
 class Player2(pygame.sprite.Sprite):
     def __init__(self, velocity, bullet_group):
         super().__init__()
@@ -370,7 +387,7 @@ class Player2(pygame.sprite.Sprite):
     def shooting(self):
       
             shoot_sound.play()      #zatím bez omezení počtu střel
-            Player2Bullet(self.rect.centerx, self.rect.centery, self.bullet_group)
+            Player2Bullet(self.rect.centerx, self.rect.centery, self.bullet_group, player1)
     
      
     def collisions(self):
@@ -385,12 +402,12 @@ class Player2(pygame.sprite.Sprite):
         if pygame.sprite.spritecollide(self, planet_group, False):
             self.velocity.x = 0
             self.velocity.y = 0
+            if self.lives <= 5:
+                self.lives += .01
 
-        if pygame.sprite.spritecollide(self, my_player_bullet_group, True):
-                pass
 
 class PlayerBullet(pygame.sprite.Sprite):
-    def __init__(self, x, y, bullet_group):
+    def __init__(self, x, y, bullet_group, player2):
         """Initialize the bullet"""
         super().__init__()
         self.image = pygame.image.load("player1/green_laser.png")
@@ -400,6 +417,7 @@ class PlayerBullet(pygame.sprite.Sprite):
         self.i = i
         self.velocity = 100
         bullet_group.add(self)
+        self.player2 = player2
 
     def update(self):
         """Update the bullet"""
@@ -424,16 +442,16 @@ class PlayerBullet(pygame.sprite.Sprite):
         if self.rect.centerx >= WINDOW_WIDTH:
             self.kill()
     
-        if pygame.sprite.spritecollide(self, player_group, True):
+        if pygame.sprite.spritecollide(self, player_group, False):
              explosion = Explosion(self.rect.centerx,self.rect.centery)
              explosion_group.add(explosion)   
+             player2.lives -= 1
             
-             
 
 class Player2Bullet(pygame.sprite.Sprite):
     """A class to model a bullet fired by the player"""
 
-    def __init__(self, x, y, bullet_group):
+    def __init__(self, x, y, bullet_group, player1):
         """Initialize the bullet"""
         super().__init__()
         self.image = pygame.image.load("player2/red_laser.png")
@@ -443,6 +461,7 @@ class Player2Bullet(pygame.sprite.Sprite):
         self.i = i
         self.velocity = 100
         bullet_group.add(self)
+        self.player1 = player1
 
     def update(self):
         """Update the bullet"""
@@ -467,9 +486,10 @@ class Player2Bullet(pygame.sprite.Sprite):
         if self.rect.centerx >= WINDOW_WIDTH:
             self.kill()
 
-        if pygame.sprite.spritecollide(self, player_group, True):
+        if pygame.sprite.spritecollide(self, player_group, False):
              explosion = Explosion(self.rect.centerx,self.rect.centery)
              explosion_group.add(explosion)
+             player1.lives -= 1
 
 class Explosion(pygame.sprite.Sprite):
 	def __init__(self, x, y):
@@ -516,6 +536,7 @@ class Planet(pygame.sprite.Sprite):
            explosion = Explosion(self.rect.centerx,self.rect.centery)
            explosion_group.add(explosion)
            explosion_sound.play()
+           player1.lives -= 1
 
         
 
@@ -530,7 +551,7 @@ player1 = Player1(velocity, my_player_bullet_group)
 player2 = Player2(velocity, my_player_bullet_group)
 player_group.add(player1, player2)  #pozor!!! vrátit player 2
 
-my_game = Game(player1, player2)
+my_game = Game(player1, player2, meteorit1, my_player_bullet_group)
 my_game.pause_game("Left player: w, a, s, d + LCTRL","Right player: arrows + space","press 'enter' to begin'", "press 'm' to mute")
 
 
