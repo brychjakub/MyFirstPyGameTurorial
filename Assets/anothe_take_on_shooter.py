@@ -26,7 +26,7 @@ shoot_sound = pygame.mixer.Sound("GunSilencer.mp3")
 explosion_sound = pygame.mixer.Sound("Grenade.mp3")
 
 background_music = pygame.mixer.Sound("veselaCut.mp3")
-#background_music.play(-1)
+background_music.play(-1)
 
 play = 0 #určuje pozici mute button, sudé čísla včetně 0 znamá play, lichá stop
 
