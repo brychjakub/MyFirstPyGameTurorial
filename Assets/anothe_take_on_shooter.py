@@ -26,7 +26,7 @@ shoot_sound = pygame.mixer.Sound("GunSilencer.mp3")
 explosion_sound = pygame.mixer.Sound("Grenade.mp3")
 
 background_music = pygame.mixer.Sound("veselaCut.mp3")
-background_music.play(-1)
+#background_music.play(-1)
 
 play = 0 #určuje pozici mute button, sudé čísla včetně 0 znamá play, lichá stop
 
@@ -63,24 +63,16 @@ class Game():
 
 
     def endGame(self):
-        if player1.lives == 0:
-            explosion = Explosion(player1.rect.centerx, player1.rect.centery)
-            explosion_group.add(explosion)
-            explosion_sound.play() 
+        if player1.lives <= 0:
             player1.kill()
-            explosion.kill()
-            display_surface.blit(font.render("the winner is player 2", True, green, black),(100,100))
-            display_surface.blit(font.render("wanna player 2 back? hit ENTER!", True, green, black),(100,200))
+            display_surface.blit(font2.render("the winner is player 2", True, green, black),(100,100))
+            display_surface.blit(font2.render("wanna player 2 back? hit ENTER!", True, green, black),(100,200))
          
 
-        if player2.lives <=0:
-            explosion = Explosion(player2.rect.centerx, player2.rect.centery)
-            explosion_group.add(explosion)
-            explosion_sound.play() 
+        if player2.lives <= 0:
             player2.kill()
-            explosion.kill()
-            display_surface.blit(font.render("the winner is player 1", True, green, black),(100,100))
-            display_surface.blit(font.render("wanna player 1 back? hit ENTER!", True, green, black),(100,200))
+            display_surface.blit(font2.render("the winner is player 1", True, green, black),(100,100))
+            display_surface.blit(font2.render("wanna player 1 back? hit ENTER!", True, green, black),(100,200))
            
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RETURN:
@@ -304,7 +296,7 @@ class Player1(pygame.sprite.Sprite,):
             self.velocity.x = 0
             self.velocity.y = 0
             if self.lives <= 5:
-                self.lives += .01        #idea - nabití života po desetinách, max asi jen o 1
+                self.lives += .1        #idea - nabití života po desetinách, max asi jen o 1
 
 
 class Player2(pygame.sprite.Sprite):
@@ -445,6 +437,7 @@ class PlayerBullet(pygame.sprite.Sprite):
         if pygame.sprite.spritecollide(self, player_group, False):
              explosion = Explosion(self.rect.centerx,self.rect.centery)
              explosion_group.add(explosion)   
+             explosion_sound.play()
              player2.lives -= 1
             
 
@@ -489,6 +482,7 @@ class Player2Bullet(pygame.sprite.Sprite):
         if pygame.sprite.spritecollide(self, player_group, False):
              explosion = Explosion(self.rect.centerx,self.rect.centery)
              explosion_group.add(explosion)
+             explosion_sound.play()
              player1.lives -= 1
 
 class Explosion(pygame.sprite.Sprite):
@@ -598,9 +592,7 @@ while running:
     
     display_surface.blit(BACKGROUND_IMAGE, BACKGROUND_IMAGE_RECT)
 
-    my_game.update()
-
-    
+        
     my_player_bullet_group.update()
     my_player_bullet_group.draw(display_surface)
 
@@ -614,6 +606,9 @@ while running:
 
     planet_group.draw(display_surface)
     planet_group.update()
+
+
+    my_game.update()
 
     explosion_group.draw(display_surface)
     explosion_group.update()
