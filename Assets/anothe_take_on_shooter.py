@@ -19,6 +19,7 @@ display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 pygame.display.set_caption("fly and shoot")
 
 font = pygame.font.Font('AttackGraffiti.ttf', 32)
+font2 = pygame.font.Font('Blacknorthdemo.otf',32)
 
 
 shoot_sound = pygame.mixer.Sound("GunSilencer.mp3")
@@ -68,6 +69,64 @@ class Game():
         lives_rect2.topleft = (0, 0)
         display_surface.blit(lives_text2, lives_rect2)
 
+    def pause_game(self, main_text, main_text2, sub_text, mute_text):
+        """Pause the game"""
+        global running
+
+        #Set color
+        WHITE = (255, 255, 255)
+        BLACK = (0, 0, 0)
+
+        #Create the main pause text
+        main_text = font2.render(main_text, True, WHITE)
+        main_rect = main_text.get_rect()
+        main_rect.center = (WINDOW_WIDTH//4, WINDOW_HEIGHT//3)
+
+        main_text2 = font2.render(main_text2, True, WHITE)
+        main_rect2 = main_text2.get_rect()
+        main_rect2.center = (WINDOW_WIDTH-(WINDOW_WIDTH//4), WINDOW_HEIGHT//3)
+
+        #Create the sub pause text
+        sub_text = font2.render(sub_text, True, WHITE)
+        sub_rect = sub_text.get_rect()
+        sub_rect.center = (WINDOW_WIDTH//2, WINDOW_HEIGHT//3 + 64)
+
+        mute_text = font2.render(mute_text, True, WHITE)
+        mute_rect = mute_text.get_rect()
+        mute_rect.center = (WINDOW_WIDTH//2, WINDOW_HEIGHT//2)
+
+
+        #Display the pause text
+        display_surface.fill(BLACK)
+        display_surface.blit(main_text, main_rect)
+        display_surface.blit(sub_text, sub_rect)
+        display_surface.blit(mute_text, mute_rect)
+        display_surface.blit(main_text2, main_rect2)
+        pygame.display.update()
+
+        #Pause the game
+        is_paused = True
+        while is_paused:
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
+                        is_paused = False
+                if event.type == pygame.QUIT:
+                    is_paused = False
+                    running = False
+
+
+    def reset_game(self):
+        """Reset the game"""
+        self.score = 0
+        self.round_number = 0
+
+        self.player.lives = 5
+        self.player.warps = 2
+        self.player.reset()
+
+        self.start_new_round()
+
 class Meteorites(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -101,7 +160,7 @@ class Player1(pygame.sprite.Sprite,):
         self.image = pygame.image.load("player1/spaceship_left.png")
         self.lives = 5
         self.rect = self.image.get_rect()
-        self.rect.centerx = random.randint(0,WINDOW_WIDTH//2)
+        self.rect.centerx = random.randint(WINDOW_WIDTH//2, WINDOW_WIDTH-OBJECT_WIDTH)
 
         x = self.rect.centerx
         self.rect.bottom = WINDOW_HEIGHT//2
@@ -213,7 +272,7 @@ class Player1(pygame.sprite.Sprite,):
     def shooting(self):
       
             shoot_sound.play()      #zatím bez omezení počtu střel
-            PlayerBullet(self.rect.centerx, self.rect.bottom, self.bullet_group)
+            PlayerBullet(self.rect.centerx, self.rect.centery, self.bullet_group)
                       
     def collisions(self):
         if pygame.sprite.spritecollide(self, meteorites_group, True):
@@ -229,7 +288,7 @@ class Player1(pygame.sprite.Sprite,):
         if pygame.sprite.spritecollide(self, planet_group, False):
             self.velocity.x = 0
             self.velocity.y = 0
-            self.lives -= .1
+            self.lives += .01        #idea - nabití života po desetinách, max asi jen o 1
              
 class Player2(pygame.sprite.Sprite):
     def __init__(self, velocity, bullet_group):
@@ -238,7 +297,7 @@ class Player2(pygame.sprite.Sprite):
         self.image = pygame.image.load("player2/spaceship_left.png")
 
         self.rect = self.image.get_rect()
-        self.rect.centerx = random.randint(WINDOW_WIDTH//2, WINDOW_WIDTH-OBJECT_WIDTH)
+        self.rect.centerx = random.randint(0,WINDOW_WIDTH//2)
 
         x = self.rect.centerx
         self.rect.bottom = WINDOW_HEIGHT//2
@@ -311,7 +370,7 @@ class Player2(pygame.sprite.Sprite):
     def shooting(self):
       
             shoot_sound.play()      #zatím bez omezení počtu střel
-            Player2Bullet(self.rect.centerx, self.rect.bottom, self.bullet_group)
+            Player2Bullet(self.rect.centerx, self.rect.centery, self.bullet_group)
     
      
     def collisions(self):
@@ -472,7 +531,7 @@ player2 = Player2(velocity, my_player_bullet_group)
 player_group.add(player1, player2)  #pozor!!! vrátit player 2
 
 my_game = Game(player1, player2)
-
+my_game.pause_game("Left player: w, a, s, d + LCTRL","Right player: arrows + space","press 'enter' to begin'", "press 'm' to mute")
 
 
 planet_group = pygame.sprite.Group()
