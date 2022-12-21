@@ -10,8 +10,8 @@ FPS = 60
 clock = pygame.time.Clock()
 
 #Set display surface
-WINDOW_WIDTH = 1200
-WINDOW_HEIGHT = 800
+WINDOW_WIDTH = 1300
+WINDOW_HEIGHT = 900
 
 OBJECT_WIDTH = 80
 OBJECT_HEIGHT = 80
@@ -28,7 +28,6 @@ explosion_sound = pygame.mixer.Sound("Grenade.mp3")
 background_music = pygame.mixer.Sound("veselaCut.mp3")
 
 play = 0 #určuje pozici mute button, sudé čísla včetně 0 znamá play, lichá stop
-
 
 
 velocity = 5        #toto asi k ničemu není, je to v pplayerovi ve vektorech
@@ -138,8 +137,8 @@ class Game():
 
     def reset_game(self):
         """Reset the game"""
-        self.player1.lives = 5
-        self.player2.lives = 5
+        self.player1.lives = 10
+        self.player2.lives = 10
                 
 
 
@@ -174,7 +173,7 @@ class Player1(pygame.sprite.Sprite,):
     def __init__(self, velocity, bullet_group):
         super().__init__()
         self.image = pygame.image.load("player1/spaceship_left.png")
-        self.lives = 5
+        self.lives = 10
         self.rect = self.image.get_rect()
         self.rect.centerx = random.randint(WINDOW_WIDTH//2, WINDOW_WIDTH-OBJECT_WIDTH)
 
@@ -302,7 +301,7 @@ class Player1(pygame.sprite.Sprite,):
 class Player2(pygame.sprite.Sprite):
     def __init__(self, velocity, bullet_group):
         super().__init__()
-        self.lives = 5
+        self.lives = 10
         self.image = pygame.image.load("player2/spaceship_left.png")
 
         self.rect = self.image.get_rect()
