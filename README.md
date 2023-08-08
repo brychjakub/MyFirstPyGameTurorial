@@ -1,5 +1,7 @@
 # SpaceShooter
 
-Our swift space shooter game, the .exe file should work so you can try it :)
+My swift space shooter game.
+- done with Pygame library
+- improved after players asked for longer game
+- large project with following process of 3D game done in Unreal Engine, comming soon
 
-This is still work in progress
