@@ -72,12 +72,16 @@ class Game():
             display_surface.blit(font2.render("the winner is player 1", True, green, black),(100,100))
             display_surface.blit(font2.render("wanna player 1 back? hit ENTER!", True, green, black),(100,200))
            
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_RETURN:
-                self.reset_game()
-                player1.kill()
-                player2.kill()
-                player_group.add(player1, player2)
+        try:   
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    self.reset_game()
+                    player1.kill()
+                    player2.kill()
+                    player_group.add(player1, player2)
+        except: 
+            pass
+
 
     def draw(self):
         lives_text = font.render("Lives: " + str(self.player1.lives), True, green, white)
